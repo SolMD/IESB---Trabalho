@@ -1,0 +1,198 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+#define TAM 3
+
+struct Jogador {
+    char nome[50];
+    char simbolo;
+};
+
+void limparBuffer() {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF);
+}
+
+void imprimirTabuleiro(char tabuleiro[TAM][TAM]) {
+    printf("\n   1   2   3\n");
+    for (int i = 0; i < TAM; i++) {
+        printf(" %d ", i + 1);
+        for (int j = 0; j < TAM; j++) {
+            printf(" %c ", tabuleiro[i][j]);
+            if (j < TAM - 1) printf("|");
+        }
+        printf("\n");
+        if (i < TAM - 1) printf("  ---+---+---\n");
+    }
+}
+
+int checarVitoria(char tabuleiro[TAM][TAM], char simbolo) {
+    for (int i = 0; i < TAM; i++) {
+        if (tabuleiro[i][0] == simbolo && tabuleiro[i][1] == simbolo && tabuleiro[i][2] == simbolo)
+            return 1;
+        if (tabuleiro[0][i] == simbolo && tabuleiro[1][i] == simbolo && tabuleiro[2][i] == simbolo)
+            return 1;
+    }
+    if (tabuleiro[0][0] == simbolo && tabuleiro[1][1] == simbolo && tabuleiro[2][2] == simbolo)
+        return 1;
+    if (tabuleiro[0][2] == simbolo && tabuleiro[1][1] == simbolo && tabuleiro[2][0] == simbolo)
+        return 1;
+
+    return 0;
+}
+
+int respostaSim(const char *resposta) {
+    if (resposta == NULL) return 0;
+
+    char temp[10];
+    int i;
+    for (i = 0; resposta[i] && i < 9; i++) {
+        temp[i] = tolower((unsigned char)resposta[i]);
+    }
+    temp[i] = '\0';
+    return (strcmp(temp, "sim") == 0 || strcmp(temp, "s") == 0);
+}
+
+int main() {
+    char tabuleiro[TAM][TAM];
+    struct Jogador jogador1, jogador2;
+    int opcao, linha, coluna, jogadas, ganhou;
+    char resposta[10];  
+
+    jogador1.nome[0] = '\0';
+    jogador2.nome[0] = '\0';
+
+    int scoreJogador1 = 0;
+    int scoreJogador2 = 0;
+
+    do {
+        printf("   __   __    ___   __     ____   __     _  _  ____  __    _  _   __   \n");
+        printf(" _(  ) /  \\  / __) /  \\   (    \\ / _\\   / )( \\(  __)(  )  / )( \\ / _\\  \n");
+        printf("/ \\) \\(  O )( (_ \\(  O )   ) D (/    \\  \\ \\/ / ) _) / (_/\\) __ (/    \\ \n");
+        printf("\\____/ \\__/  \\___/ \\__/   (____/\\_/\\_/   \\__/ (____)\\____/\\_)(_ /\\_/\\_/\n\n");
+
+        printf("                      +------------------------+\n");
+        printf("                      |     MENU PRINCIPAL     |\n");
+        printf("                      +------------------------+\n");
+        printf("                      | 1 - Jogar              |\n");
+        printf("                      | 2 - Score              |\n");
+        printf("                      | 3 - Sobre o Jogo       |\n");
+        printf("                      | 4 - Sair               |\n");
+        printf("                      +------------------------+\n");
+
+        while (1) {
+            printf("Escolha uma opcao: ");
+            if (scanf("%d", &opcao) != 1) {
+                printf("Entrada invalida! Digite um numero de 1 a 4.\n");
+                limparBuffer();
+            } else if (opcao < 1 || opcao > 4) {
+                printf("Opcao invalida! Digite um numero de 1 a 4.\n");
+                limparBuffer();
+            } else {
+                limparBuffer();
+                break;
+            }
+        }
+
+        if (opcao == 4) {
+            printf("Saindo do jogo...\n");
+            break;
+        }
+
+        if (opcao == 3) {
+            printf("\n--- SOBRE O JOGO ---\n");
+            printf("Este é um jogo da velha em C feito para 2 jogadores.\n");
+            printf("Jogadores se alternam escolhendo posicoes de 1 a 3 no tabuleiro.\n");
+            printf("Vence quem alinhar 3 simbolos primeiro.\n\n");
+            printf("Feito por Sol Moreira Donason 2512130068.\n\n");
+            continue;
+        }
+
+        if (opcao == 2) {
+            printf("\n--- SCORE ---\n");
+            if (strlen(jogador1.nome) > 0)
+                printf("%s (X): %d ponto(s)\n", jogador1.nome, scoreJogador1);
+            else
+                printf("Jogador 1 (X): %d ponto(s)\n", scoreJogador1);
+
+            if (strlen(jogador2.nome) > 0)
+                printf("%s (O): %d ponto(s)\n\n", jogador2.nome, scoreJogador2);
+            else
+                printf("Jogador 2 (O): %d ponto(s)\n\n", scoreJogador2);
+
+            continue;
+        }
+
+        for (int i = 0; i < TAM; i++)
+            for (int j = 0; j < TAM; j++)
+                tabuleiro[i][j] = ' ';
+
+        printf("Nome do Jogador 1 (X): ");
+        fgets(jogador1.nome, sizeof(jogador1.nome), stdin);
+        jogador1.nome[strcspn(jogador1.nome, "\n")] = '\0';
+        jogador1.simbolo = 'X';
+
+        printf("Nome do Jogador 2 (O): ");
+        fgets(jogador2.nome, sizeof(jogador2.nome), stdin);
+        jogador2.nome[strcspn(jogador2.nome, "\n")] = '\0';
+        jogador2.simbolo = 'O';
+
+        jogadas = 0;
+        ganhou = 0;
+
+        while (jogadas < 9 && !ganhou) {
+            imprimirTabuleiro(tabuleiro);
+
+            struct Jogador atual = (jogadas % 2 == 0) ? jogador1 : jogador2;
+
+            do {
+                printf("%s, digite linha e coluna (1 a 3): ", atual.nome);
+                if (scanf("%d %d", &linha, &coluna) != 2) {
+                    printf("Entrada invalida. Tente novamente.\n");
+                    limparBuffer();
+                    linha = -1;
+                    continue;
+                }
+
+                linha--;
+                coluna--;
+
+                if (linha < 0 || linha >= TAM || coluna < 0 || coluna >= TAM || tabuleiro[linha][coluna] != ' ') {
+                    printf("Posicao invalida ou ocupada. Tente outra posicao.\n");
+                    linha = -1;
+                }
+            } while (linha == -1);
+
+            tabuleiro[linha][coluna] = atual.simbolo;
+            jogadas++;
+
+            if (checarVitoria(tabuleiro, atual.simbolo)) {
+                imprimirTabuleiro(tabuleiro);
+                printf("Parabens, %s! Voce ganhou!\n", atual.nome);
+                ganhou = 1;
+
+                if (atual.simbolo == jogador1.simbolo)
+                    scoreJogador1++;
+                else
+                    scoreJogador2++;
+
+                break;
+            }
+        }
+
+        if (!ganhou && jogadas == 9) {
+            imprimirTabuleiro(tabuleiro);
+            printf("Empate!\n");
+        }
+
+        printf("Deseja jogar novamente? (sim/n): ");
+        limparBuffer();
+        fgets(resposta, sizeof(resposta), stdin);
+        resposta[strcspn(resposta, "\n")] = '\0';
+
+    } while (respostaSim(resposta));
+
+    return 0;
+}
